@@ -18,6 +18,8 @@
 #include "../halo_data/player.hpp"
 #include "../halo_data/server.hpp"
 #include "../halo_data/tag.hpp"
+#include "../event/vcr.hpp"
+#include "../halo_data/encode.hpp"
 #include "../halo_data/multiplayer.hpp"
 #include "../config/ini.hpp"
 #include "../localization/localization.hpp"
@@ -38,26 +40,6 @@ namespace Chimera {
     static const char *color_id_for_player(std::uint8_t player, ColorARGB *color_to_use);
     static void check_for_quit_players();
     static void load_chat_settings();
-
-    static std::wstring u8_to_u16(const char *str) {
-        wchar_t strw[1024] = {};
-        if(MultiByteToWideChar(CP_UTF8, 0, str, -1, strw, sizeof(strw) / sizeof(*strw)) == 0) {
-            return std::wstring();
-        }
-        else {
-            return std::wstring(strw);
-        }
-    }
-
-    static std::string u16_to_u8(const wchar_t *strw) {
-        char str[1024] = {};
-        if(WideCharToMultiByte(CP_UTF8, 0, strw, -1, str, sizeof(str) / sizeof(*str), nullptr, nullptr) == 0) {
-            return std::string();
-        }
-        else {
-            return std::string(str);
-        }
-    }
 
     extern "C" std::uint32_t chat_get_local_rcon_id() noexcept {
         auto *list = ServerInfoPlayerList::get_server_info_player_list();
@@ -457,22 +439,42 @@ namespace Chimera {
         return name_color_to_use;
     }
 
+    static std::vector<Event<VCREventFunction>> vcr_events;
+
+    void add_vcr_event(const VCREventFunction function, EventPriority priority) {
+        // Remove if exists
+        remove_vcr_event(function);
+
+        // Add the event
+        vcr_events.emplace_back(Event<VCREventFunction> { function, priority });
+    }
+
+    void remove_vcr_event(const VCREventFunction function) {
+        for(std::size_t i = 0; i < vcr_events.size(); i++) {
+            if(vcr_events[i].function == function) {
+                vcr_events.erase(vcr_events.begin() + i);
+                return;
+            }
+        }
+    }
+
     extern "C" void draw_chat_message(const wchar_t *message, std::uint32_t p_int, std::uint32_t c_int) {
         ChatMessage chat_message;
+
+        std::uint8_t player_index = static_cast<std::uint8_t>(p_int);
+        std::uint8_t channel_index = static_cast<std::uint8_t>(c_int);
+
+        // Channel 4 - the VCR
+        if(channel_index == 0) {
+            call_in_order<VCREventFunction>(vcr_events, message, player_index);
+            return;
+        }
 
         std::wstring message_filtered;
         if(block_ips) {
             std::regex r("(\\d(\\^\\d)*){1,3}(\\.((\\^\\d)*\\d(\\&\\d)*){1,3}){3}");
             message_filtered = u8_to_u16(std::regex_replace(u16_to_u8(message), r, "#.#.#.#").c_str());
             message = message_filtered.c_str();
-        }
-
-        std::uint8_t player_index = static_cast<std::uint8_t>(p_int);
-        std::uint8_t channel_index = static_cast<std::uint8_t>(c_int);
-
-        // Ignore invalid channels
-        if(channel_index > 3) {
-            return;
         }
 
         // This is a server message. No need to format.
@@ -518,6 +520,11 @@ namespace Chimera {
                 initialize_chat_message(chat_message, s, server_message_color);
                 add_message_to_array(server_messages, chat_message);
             }
+            return;
+        }
+
+        // Ignore invalid channels
+        if(channel_index > 4) {
             return;
         }
 

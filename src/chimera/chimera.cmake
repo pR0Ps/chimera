@@ -130,6 +130,7 @@ add_library(chimera STATIC
     src/chimera/halo_data/damage.S
     src/chimera/halo_data/decal.cpp
     src/chimera/halo_data/effect.cpp
+    src/chimera/halo_data/encode.cpp
     src/chimera/halo_data/flag.cpp
     src/chimera/halo_data/game_engine.cpp
     src/chimera/halo_data/hud_fonts.cpp

@@ -297,14 +297,15 @@ namespace Chimera {
         
         bool can_load_indexed_tags = map_engine == CacheFileEngine::CACHE_FILE_CUSTOM_EDITION;
         std::filesystem::path bitmaps_path, sounds_path;
-        
+
+        auto stock_map_path = get_chimera().get_stock_map_path();
         if(map_engine == CacheFileEngine::CACHE_FILE_CUSTOM_EDITION && current_engine != GameEngine::GAME_ENGINE_CUSTOM_EDITION) {
-            bitmaps_path = std::filesystem::path("maps") / custom_bitmaps_file;
-            sounds_path = std::filesystem::path("maps") / custom_sounds_file;
+            bitmaps_path = stock_map_path / custom_bitmaps_file;
+            sounds_path = stock_map_path / custom_sounds_file;
         }
         else {
-            bitmaps_path = std::filesystem::path("maps") / bitmaps_file;
-            sounds_path = std::filesystem::path("maps") / sounds_file;
+            bitmaps_path = stock_map_path / bitmaps_file;
+            sounds_path = stock_map_path / sounds_file;
         }
         
         // If it's a custom edition map, we ought to first figure out what tags go to what
@@ -941,7 +942,7 @@ namespace Chimera {
             
             // If we don't have it precached, read from disk
             if(game_engine() == GameEngine::GAME_ENGINE_RETAIL && (*origin & ResourceOrigin::RESOURCE_ORIGIN_CUSTOM_BIT)) {
-                auto maps = std::filesystem::path("maps");
+                auto maps = get_chimera().get_stock_map_path();
                 std::FILE *f = nullptr;
                 std::filesystem::path map_path;
                 
@@ -1274,7 +1275,7 @@ namespace Chimera {
         std::FILE *loc = nullptr;
         auto is_custom_edition = game_engine() == GameEngine::GAME_ENGINE_CUSTOM_EDITION;
         
-        auto maps_folder = std::filesystem::path("maps");
+        auto maps_folder = get_chimera().get_stock_map_path();
         
         bitmaps = std::fopen((maps_folder / custom_bitmaps_file).string().c_str(), "rb");
         sounds = std::fopen((maps_folder / custom_sounds_file).string().c_str(), "rb");

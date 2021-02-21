@@ -30,7 +30,7 @@ extern "C" {
 
 namespace Chimera {
     std::filesystem::path MapEntry::get_file_path() {
-        auto p1 = std::filesystem::path("maps") / (this->name + ".map");
+        auto p1 = get_chimera().get_stock_map_path() / (this->name + ".map");
         if(std::filesystem::exists(p1)) {
             return p1;
         }
@@ -355,7 +355,7 @@ namespace Chimera {
             }
         };
         
-        add_map_folder("maps");
+        add_map_folder(get_chimera().get_stock_map_path());
         add_map_folder(get_chimera().get_map_path());
         
         // Reset CRC32

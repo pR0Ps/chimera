@@ -544,6 +544,22 @@ namespace Chimera {
         return this->p_map_path;
     }
 
+    // TODO: sounds, loc, bitmaps ui are not loaded properly from here
+    // TODO: test which ones exactly
+    const std::filesystem::path Chimera::get_stock_map_path() noexcept {
+        if (this->p_stock_map_path.empty()){
+            const char *path = this->get_ini()->get_value("halo.stock_map_path");
+            if (path){
+                this->p_stock_map_path = std::filesystem::path(path);
+            }
+            else {
+                this->p_stock_map_path = std::filesystem::path("maps");
+            }
+            std::filesystem::create_directory(this->p_stock_map_path);
+        }
+        return this->p_stock_map_path;
+    }
+
     void Chimera::reload_config() {
         this->p_config = std::make_unique<Config>(this->get_path() / "preferences.txt");
         this->p_config->load();
